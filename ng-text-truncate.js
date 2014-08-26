@@ -18,34 +18,40 @@ angular.module( 'ngTextTruncate', [] )
             $scope.toggleShow = function() {
                 $scope.open = !$scope.open;
             };
-            
+
             $scope.useToggling = $attrs.ngTtNoToggling === undefined;
         },
         link: function( $scope, $element, $attrs ) {
             $scope.open = false;
-            
             ValidationServices.failIfWrongThreshouldConfig( $scope.charsThreshould, $scope.wordsThreshould );
-            
+
             var CHARS_THRESHOLD = parseInt( $scope.charsThreshould );
             var WORDS_THRESHOLD = parseInt( $scope.wordsThreshould );
-            
-            if( CHARS_THRESHOLD ) {
-                if( $scope.text && CharBasedTruncation.truncationApplies( $scope, CHARS_THRESHOLD ) ) {
-                    CharBasedTruncation.applyTruncation( CHARS_THRESHOLD, $scope, $element );
-                    
+
+            $scope.doTruncate = function() {
+                if( CHARS_THRESHOLD ) {
+                    if( $scope.text && CharBasedTruncation.truncationApplies( $scope, CHARS_THRESHOLD ) ) {
+                        CharBasedTruncation.applyTruncation( CHARS_THRESHOLD, $scope, $element );
+
+                    } else {
+                        $element.text( $scope.text );
+                    }
+
                 } else {
-                    $element.append( $scope.text );
+                    if( $scope.text && WordBasedTruncation.truncationApplies( $scope, WORDS_THRESHOLD ) ) {
+                        WordBasedTruncation.applyTruncation( WORDS_THRESHOLD, $scope, $element );
+
+                    } else {
+                        $element.text( $scope.text );
+                    }
+
                 }
-                
-            } else {
-                if( $scope.text && WordBasedTruncation.truncationApplies( $scope, WORDS_THRESHOLD ) ) {
-                    WordBasedTruncation.applyTruncation( WORDS_THRESHOLD, $scope, $element );
-                    
-                } else {
-                    $element.append( $scope.text );
-                }
-                
             }
+
+            $scope.$watch('text', function() {
+                //update when scope data changes
+                $scope.doTruncate();
+            });
         }
     };
 } )
@@ -69,19 +75,19 @@ angular.module( 'ngTextTruncate', [] )
         truncationApplies: function( $scope, threshould ) {
             return $scope.text.length > threshould;
         },
-        
+
         applyTruncation: function( threshould, $scope, $element ) {
             if( $scope.useToggling ) {
-                var el = angular.element(    "<span>" + 
-                                                $scope.text.substr( 0, threshould ) + 
+                var el = angular.element(    "<span>" +
+                                                $scope.text.substr( 0, threshould ) +
                                                 "<span ng-show='!open'>...</span>" +
                                                 "<span class='btn-link ngTruncateToggleText' " +
                                                     "ng-click='toggleShow()'" +
                                                     "ng-show='!open'>" +
                                                     " " + ($scope.customMoreLabel ? $scope.customMoreLabel : "More") +
                                                 "</span>" +
-                                                "<span ng-show='open'>" + 
-                                                    $scope.text.substring( threshould ) + 
+                                                "<span ng-show='open'>" +
+                                                    $scope.text.substring( threshould ) +
                                                     "<span class='btn-link ngTruncateToggleText'" +
                                                           "ng-click='toggleShow()'>" +
                                                         " " + ($scope.customLessLabel ? $scope.customLessLabel : "Less") +
@@ -89,11 +95,11 @@ angular.module( 'ngTextTruncate', [] )
                                                 "</span>" +
                                             "</span>" );
                 $compile( el )( $scope );
-                $element.append( el );
-                
+                $element.html( el );
+
             } else {
-                $element.append( $scope.text.substr( 0, threshould ) + "..." );
-                
+                $element.html( $scope.text.substr( 0, threshould ) + "..." );
+
             }
         }
     }
@@ -106,20 +112,20 @@ angular.module( 'ngTextTruncate', [] )
         truncationApplies: function( $scope, threshould ) {
             return $scope.text.split( " " ).length > threshould;
         },
-        
+
         applyTruncation: function( threshould, $scope, $element ) {
             var splitText = $scope.text.split( " " );
             if( $scope.useToggling ) {
-                var el = angular.element(    "<span>" + 
-                                                splitText.slice( 0, threshould ).join( " " ) + " " + 
+                var el = angular.element(    "<span>" +
+                                                splitText.slice( 0, threshould ).join( " " ) + " " +
                                                 "<span ng-show='!open'>...</span>" +
                                                 "<span class='btn-link ngTruncateToggleText' " +
                                                     "ng-click='toggleShow()'" +
                                                     "ng-show='!open'>" +
                                                     " " + ($scope.customMoreLabel ? $scope.customMoreLabel : "More") +
                                                 "</span>" +
-                                                "<span ng-show='open'>" + 
-                                                    splitText.slice( threshould, splitText.length ).join( " " ) + 
+                                                "<span ng-show='open'>" +
+                                                    splitText.slice( threshould, splitText.length ).join( " " ) +
                                                     "<span class='btn-link ngTruncateToggleText'" +
                                                           "ng-click='toggleShow()'>" +
                                                         " " + ($scope.customLessLabel ? $scope.customLessLabel : "Less") +
@@ -127,10 +133,10 @@ angular.module( 'ngTextTruncate', [] )
                                                 "</span>" +
                                             "</span>" );
                 $compile( el )( $scope );
-                $element.append( el );
-                
+                $element.html( el );
+
             } else {
-                $element.append( splitText.slice( 0, threshould ).join( " " ) + "..." );
+                $element.html( splitText.slice( 0, threshould ).join( " " ) + "..." );
             }
         }
     }
